@@ -85,8 +85,9 @@ public class WebSocketService extends Service {
         startForegroundNow();
 
         client = new OkHttpClient.Builder()
-                .pingInterval(25, TimeUnit.SECONDS)
+                .pingInterval(8, TimeUnit.SECONDS)       // keep Render proxy alive
                 .readTimeout(0, TimeUnit.MILLISECONDS)   // no read timeout for WS
+                .connectTimeout(30, TimeUnit.SECONDS)
                 .build();
 
         KeepAliveService.start(this);
