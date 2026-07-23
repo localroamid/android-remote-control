@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Kaisersfarm</string>
+    <string name="accessibility_service_label">Kaisersfarm</string>
+    <string name="accessibility_service_description">Executes remote-control commands sent by your authorized Telegram bot.</string>
+    <string name="notification_channel_name">Remote control status</string>
+    <string name="notification_title">Kaisersfarm</string>
+    <string name="notification_text">Ready for remote commands</string>
+</resources>

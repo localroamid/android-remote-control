@@ -1,0 +1,11 @@
+# Android
+local.properties
+*.iml
+.gradle/
+build/
+app/build/
+.idea/
+*.keystore
+
+# Google Services (not needed, no Firebase)
+google-services.json
