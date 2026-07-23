@@ -89,6 +89,13 @@ public class RemoteAccessibilityService extends AccessibilityService {
                         intent.getStringExtra(RemoteCommand.EXTRA_LABEL),
                         getIntOrDefault(intent, RemoteCommand.EXTRA_MAX_SCROLLS, 6));
                     break;
+                case "long_press":
+                    longPress(getInt(intent, RemoteCommand.EXTRA_X),
+                              getInt(intent, RemoteCommand.EXTRA_Y));
+                    break;
+                case "long_click_label":
+                    longClickLabel(intent.getStringExtra(RemoteCommand.EXTRA_LABEL));
+                    break;
                 case "home":
                     performGlobalAction(GLOBAL_ACTION_HOME);
                     break;
@@ -169,6 +176,14 @@ public class RemoteAccessibilityService extends AccessibilityService {
         dispatchGesture(new GestureDescription.Builder().addStroke(stroke).build(), null, null);
     }
 
+    private void longPress(int x, int y) {
+        Path path = new Path();
+        path.moveTo(x, y);
+        GestureDescription.StrokeDescription stroke =
+                new GestureDescription.StrokeDescription(path, 0, 800); // 800ms = long press
+        dispatchGesture(new GestureDescription.Builder().addStroke(stroke).build(), null, null);
+    }
+
     private void swipe(int x1, int y1, int x2, int y2) {
         Path path = new Path();
         path.moveTo(x1, y1);
@@ -226,6 +241,23 @@ public class RemoteAccessibilityService extends AccessibilityService {
     }
 
     // ── label search ───────────────────────────────────────────────────────
+
+    private void longClickLabel(String labels) {
+        if (labels == null || labels.trim().isEmpty()) return;
+        AccessibilityNodeInfo root = getRootInActiveWindow();
+        if (root == null) return;
+        String[] opts = labels.toLowerCase(Locale.US).split("\\|");
+        AccessibilityNodeInfo match = findNodeByLabel(root, opts);
+        if (match != null) {
+            AccessibilityNodeInfo clickable = findClickableNode(match);
+            if (clickable != null) {
+                clickable.performAction(AccessibilityNodeInfo.ACTION_LONG_CLICK);
+                clickable.recycle();
+            }
+            match.recycle();
+        }
+        root.recycle();
+    }
 
     private void clickFirstMatchingLabel(String labels) {
         if (labels == null || labels.trim().isEmpty()) return;
