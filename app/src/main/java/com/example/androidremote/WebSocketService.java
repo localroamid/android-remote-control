@@ -1,5 +1,8 @@
 package com.example.androidremote;
 
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.Service;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -11,6 +14,7 @@ import android.util.Base64;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
+import androidx.core.app.NotificationCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import org.json.JSONObject;
@@ -76,6 +80,9 @@ public class WebSocketService extends Service {
         deviceName  = Build.MANUFACTURER + " " + Build.MODEL;
         serverUrl   = getServerUrl();
 
+        // REQUIRED on Android 8+: must call startForeground() within 5 seconds
+        startForegroundNow();
+
         client = new OkHttpClient.Builder()
                 .pingInterval(25, TimeUnit.SECONDS)
                 .readTimeout(0, TimeUnit.MILLISECONDS)   // no read timeout for WS
@@ -83,6 +90,23 @@ public class WebSocketService extends Service {
 
         KeepAliveService.start(this);
         Log.i(TAG, "Service created — device=" + deviceId + " server=" + serverUrl);
+    }
+
+    private void startForegroundNow() {
+        final String CHANNEL_ID = "remote_control_status";
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                    CHANNEL_ID, "Remote Control", NotificationManager.IMPORTANCE_LOW);
+            getSystemService(NotificationManager.class).createNotificationChannel(channel);
+        }
+        Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_stat_remote)
+                .setContentTitle("Remote Control")
+                .setContentText("WebSocket connected")
+                .setOngoing(true)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .build();
+        startForeground(1002, notification);
     }
 
     @Override
