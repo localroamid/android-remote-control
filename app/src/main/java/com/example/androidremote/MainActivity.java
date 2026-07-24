@@ -12,6 +12,8 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import android.os.PowerManager;
+
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
@@ -27,6 +29,10 @@ public class MainActivity extends AppCompatActivity {
             ActivityCompat.requestPermissions(
                     this, new String[]{Manifest.permission.POST_NOTIFICATIONS}, 10);
         }
+
+        // Auto-request battery optimization exemption if not already granted
+        // This is the #1 cause of background service being killed after ~10 min
+        requestBatteryOptimizationExemption();
 
         // ── load saved server URL ──────────────────────────────────────────
         SharedPreferences prefs = getSharedPreferences(WebSocketService.PREFS, MODE_PRIVATE);
@@ -117,6 +123,17 @@ public class MainActivity extends AppCompatActivity {
         // Start service if accessibility is already enabled
         KeepAliveService.start(this);
         WebSocketService.start(this);
+    }
+
+    private void requestBatteryOptimizationExemption() {
+        try {
+            PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
+            if (pm != null && !pm.isIgnoringBatteryOptimizations(getPackageName())) {
+                Intent intent = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+                intent.setData(Uri.parse("package:" + getPackageName()));
+                startActivity(intent);
+            }
+        } catch (Exception ignored) {}
     }
 
     @Override
