@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Instalar Remote Control</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #0f0f0f;
+    color: #fff;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    text-align: center;
+  }
+  .logo { font-size: 64px; margin-bottom: 12px; }
+  h1 { font-size: 26px; font-weight: 700; margin-bottom: 6px; }
+  .sub { color: #aaa; font-size: 15px; margin-bottom: 36px; }
+  .qr-box {
+    background: #fff;
+    border-radius: 20px;
+    padding: 16px;
+    margin-bottom: 28px;
+    display: inline-block;
+  }
+  .qr-box img { width: 220px; height: 220px; display: block; }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: #22c55e;
+    color: #000;
+    font-size: 18px;
+    font-weight: 700;
+    padding: 16px 36px;
+    border-radius: 50px;
+    text-decoration: none;
+    margin-bottom: 20px;
+    transition: transform 0.1s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .steps {
+    background: #1a1a1a;
+    border-radius: 16px;
+    padding: 20px 24px;
+    max-width: 340px;
+    text-align: left;
+    margin-top: 8px;
+  }
+  .steps h3 { font-size: 14px; color: #aaa; margin-bottom: 14px; text-transform: uppercase; letter-spacing: 1px; }
+  .step { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 12px; }
+  .step:last-child { margin-bottom: 0; }
+  .num {
+    background: #22c55e;
+    color: #000;
+    font-weight: 700;
+    font-size: 13px;
+    border-radius: 50%;
+    min-width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .step p { font-size: 14px; color: #ccc; line-height: 1.5; padding-top: 3px; }
+  .step p b { color: #fff; }
+</style>
+</head>
+<body>
+
+<div class="logo">📱</div>
+<h1>Remote Control</h1>
+<p class="sub">Escanea el QR o toca el botón para instalar</p>
+
+<!-- QR apunta a la URL de descarga del APK en GitHub Releases -->
+<div class="qr-box">
+  <img id="qr" src="" alt="QR Code">
+</div>
+
+<a class="btn" id="dl" href="#" download>
+  ⬇️ Descargar APK
+</a>
+
+<div class="steps">
+  <h3>Pasos de instalación</h3>
+  <div class="step">
+    <div class="num">1</div>
+    <p>Descarga el archivo <b>APK</b> tocando el botón de arriba</p>
+  </div>
+  <div class="step">
+    <div class="num">2</div>
+    <p>Abre el archivo descargado. Si pide permiso, toca <b>"Configuración"</b> y activa <b>"Fuentes desconocidas"</b></p>
+  </div>
+  <div class="step">
+    <div class="num">3</div>
+    <p>Instala y abre la app. Ve a <b>Ajustes → Accesibilidad</b> y activa <b>"Remote Control"</b></p>
+  </div>
+  <div class="step">
+    <div class="num">4</div>
+    <p>¡Listo! El dispositivo aparecerá automáticamente en el panel de control</p>
+  </div>
+</div>
+
+<script>
+  // URL del APK — actualiza este link con tu Google Drive o GitHub Release
+  const APK_URL = "https://github.com/localroamid/android-remote-control/releases/latest/download/app-debug.apk";
+
+  document.getElementById('dl').href = APK_URL;
+
+  // Genera QR usando API pública
+  const qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=" + encodeURIComponent(window.location.href);
+  document.getElementById('qr').src = qrUrl;
+</script>
+
+</body>
+</html>

@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel de Control Android</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;
+  --cyan:#00d4ff;--green:#3fb950;--red:#f85149;--yellow:#d29922;
+  --purple:#bc8cff;--text:#e6edf3;--muted:#8b949e;--border:#30363d;
+  --radius:8px;
+}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;font-size:14px;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+
+/* ── login ─────────────────────────────────────────────────────────────── */
+#login-screen{display:flex;align-items:center;justify-content:center;height:100vh;background:var(--bg)}
+.login-box{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:40px;width:360px;text-align:center}
+.login-box h1{font-size:22px;margin-bottom:6px}
+.login-box p{color:var(--muted);margin-bottom:24px;font-size:13px}
+.login-box input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);padding:10px 14px;font-size:14px;outline:none;margin-bottom:12px}
+.login-box input:focus{border-color:var(--cyan)}
+.login-box .url-row{display:flex;gap:8px;margin-bottom:12px}
+.login-box .url-row input{margin:0}
+.login-box .err{color:var(--red);font-size:12px;min-height:18px;margin-bottom:10px}
+
+/* ── main app ───────────────────────────────────────────────────────────── */
+#app{display:none;flex:1;overflow:hidden;flex-direction:row}
+
+/* ── header ──────────────────────────────────────────────────────────────*/
+header{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 20px;height:48px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+header h1{font-size:15px;font-weight:600;color:var(--cyan)}
+.hdr-right{display:flex;align-items:center;gap:12px}
+.ws-dot{width:8px;height:8px;border-radius:50%;background:var(--green)}
+.ws-dot.off{background:var(--red)}
+#ws-status{font-size:12px;color:var(--muted)}
+.hdr-log{font-size:11px;color:var(--muted);cursor:pointer;text-decoration:underline}
+
+/* ── sidebar ─────────────────────────────────────────────────────────────*/
+#sidebar{width:220px;background:var(--bg2);border-right:1px solid var(--border);overflow-y:auto;flex-shrink:0}
+.sidebar-head{padding:14px 16px 8px;font-size:11px;font-weight:600;text-transform:uppercase;color:var(--muted);letter-spacing:.8px}
+.device-item{padding:10px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;border-left:3px solid transparent}
+.device-item:hover{background:var(--bg3)}
+.device-item.active{background:var(--bg3);border-left-color:var(--cyan)}
+.device-dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0}
+.device-name{font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.device-model{font-size:11px;color:var(--muted)}
+.device-item.all-item .device-dot{background:var(--purple)}
+.no-devices{padding:20px 16px;color:var(--muted);font-size:12px;text-align:center}
+
+/* ── main content ────────────────────────────────────────────────────────*/
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.target-bar{background:var(--bg2);border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;gap:12px;font-size:12px}
+.target-bar span{color:var(--muted)}
+#target-label{color:var(--cyan);font-weight:600}
+
+/* ── tabs ────────────────────────────────────────────────────────────────*/
+.tabs{display:flex;border-bottom:1px solid var(--border);background:var(--bg2);padding:0 20px;flex-shrink:0}
+.tab{padding:10px 18px;cursor:pointer;font-size:13px;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--cyan);border-bottom-color:var(--cyan)}
+.tab-content{display:none;flex:1;overflow-y:auto;padding:20px}
+.tab-content.active{display:block}
+
+/* ── controls tab ────────────────────────────────────────────────────────*/
+.section{margin-bottom:24px}
+.section-title{font-size:11px;font-weight:600;text-transform:uppercase;color:var(--muted);letter-spacing:.8px;margin-bottom:10px}
+.btn-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
+.cmd-btn{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);padding:10px 8px;cursor:pointer;font-size:13px;display:flex;flex-direction:column;align-items:center;gap:4px;transition:all .15s}
+.cmd-btn:hover{background:var(--bg4);border-color:var(--cyan);color:var(--cyan)}
+.cmd-btn:active{transform:scale(.96)}
+.cmd-btn .icon{font-size:20px}
+.cmd-btn.danger:hover{border-color:var(--red);color:var(--red)}
+.cmd-btn.success:hover{border-color:var(--green);color:var(--green)}
+
+/* custom inputs */
+.input-row{display:flex;gap:8px;align-items:flex-end;margin-top:10px}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:11px;color:var(--muted)}
+.field input{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);padding:7px 10px;width:80px;font-size:13px;outline:none}
+.field input:focus{border-color:var(--cyan)}
+.field input.wide{width:200px}
+.send-btn{background:var(--cyan);border:none;border-radius:var(--radius);color:#000;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:600;white-space:nowrap}
+.send-btn:hover{opacity:.85}
+
+/* ── screenshot viewer ──────────────────────────────────────────────────*/
+.screenshot-box{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:12px;min-height:200px;display:flex;align-items:center;justify-content:center;margin-top:10px;position:relative}
+.screenshot-box img{max-width:100%;max-height:400px;border-radius:4px;display:none}
+.screenshot-box .ph{color:var(--muted);font-size:13px}
+.ss-timestamp{font-size:11px;color:var(--muted);margin-top:6px;text-align:right}
+
+/* ── automation tab ─────────────────────────────────────────────────────*/
+.auto-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px}
+.auto-card h3{font-size:14px;margin-bottom:4px}
+.auto-card p{font-size:12px;color:var(--muted);margin-bottom:12px}
+.auto-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.auto-row label{font-size:12px;color:var(--muted);min-width:90px}
+.auto-row input{background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:6px 10px;width:70px;font-size:13px;outline:none}
+.auto-row input:focus{border-color:var(--cyan)}
+.run-btn{background:var(--green);border:none;border-radius:var(--radius);color:#000;padding:9px 20px;cursor:pointer;font-weight:600;font-size:13px}
+.run-btn:hover{opacity:.85}
+.run-btn:disabled{opacity:.4;cursor:not-allowed}
+.stop-btn{background:var(--red);border:none;border-radius:var(--radius);color:#fff;padding:9px 16px;cursor:pointer;font-weight:600;font-size:13px;display:none}
+.stop-btn.visible{display:inline-block}
+.auto-progress{font-size:12px;color:var(--muted);margin-top:8px;min-height:18px}
+
+/* ── log panel ───────────────────────────────────────────────────────────*/
+#log-panel{display:none;position:fixed;bottom:0;left:0;right:0;height:160px;background:var(--bg2);border-top:1px solid var(--border);overflow-y:auto;padding:8px 16px;font-family:'Cascadia Code','Consolas',monospace;font-size:11px;z-index:100}
+#log-panel.visible{display:block}
+.log-line{padding:1px 0;color:var(--muted)}
+.log-line.ok{color:var(--green)}
+.log-line.err{color:var(--red)}
+.log-line.info{color:var(--cyan)}
+
+/* ── settings tab ────────────────────────────────────────────────────────*/
+.setting-group{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px}
+.setting-group h3{font-size:14px;margin-bottom:12px}
+.setting-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.setting-row label{min-width:130px;font-size:13px;color:var(--muted)}
+.setting-row input{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:8px 12px;font-size:13px;outline:none}
+.setting-row input:focus{border-color:var(--cyan)}
+.save-settings{background:var(--cyan);border:none;border-radius:var(--radius);color:#000;padding:8px 20px;cursor:pointer;font-weight:600;font-size:13px;margin-top:4px}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════ LOGIN ══════════════════════════════════════════ -->
+<div id="login-screen">
+  <div class="login-box">
+    <h1>📱 Panel de Control</h1>
+    <p>Android Remote Control v2</p>
+    <div class="url-row">
+      <input type="text" id="srv-url" placeholder="ws://IP:8765" />
+    </div>
+    <input type="password" id="srv-pass" placeholder="Contraseña del panel" />
+    <div class="err" id="login-err"></div>
+    <button class="send-btn" style="width:100%" onclick="doLogin()">Conectar →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════ APP ════════════════════════════════════════════ -->
+<div id="app" style="display:none;flex-direction:column;height:100vh">
+
+  <!-- header -->
+  <header>
+    <h1>📱 Android Remote Control</h1>
+    <div class="hdr-right">
+      <div class="ws-dot off" id="ws-dot"></div>
+      <span id="ws-status">Desconectado</span>
+      <span class="hdr-log" onclick="toggleLog()">Log</span>
+      <span class="hdr-log" onclick="doLogout()" style="color:var(--red)">Salir</span>
+    </div>
+  </header>
+
+  <!-- body row -->
+  <div id="app" style="display:flex;flex:1;overflow:hidden;flex-direction:row">
+
+    <!-- sidebar -->
+    <div id="sidebar">
+      <div class="sidebar-head">Dispositivos</div>
+      <div class="device-item all-item active" onclick="selectTarget('all')" id="dev-all">
+        <div class="device-dot"></div>
+        <div>
+          <div class="device-name">Todos</div>
+          <div class="device-model" id="dev-count">0 online</div>
+        </div>
+      </div>
+      <div id="device-list">
+        <div class="no-devices">Esperando dispositivos...</div>
+      </div>
+    </div>
+
+    <!-- main -->
+    <div id="main">
+      <div class="target-bar">
+        <span>Enviando a:</span>
+        <span id="target-label">Todos los dispositivos</span>
+      </div>
+
+      <!-- tabs -->
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab('controls',this)">Controles</div>
+        <div class="tab" onclick="switchTab('screenshot',this)">Screenshot</div>
+        <div class="tab" onclick="switchTab('automation',this)">Automatización</div>
+        <div class="tab" onclick="switchTab('settings',this)">Configuración</div>
+      </div>
+
+      <!-- TAB: Controls -->
+      <div class="tab-content active" id="tab-controls">
+
+        <div class="section">
+          <div class="section-title">Navegación</div>
+          <div class="btn-grid">
+            <button class="cmd-btn" onclick="send({command:'home'})"><span class="icon">🏠</span>Home</button>
+            <button class="cmd-btn" onclick="send({command:'back'})"><span class="icon">◀</span>Back</button>
+            <button class="cmd-btn" onclick="send({command:'screenshot'})"><span class="icon">📸</span>Screenshot</button>
+            <button class="cmd-btn danger" onclick="send({command:'lock'})"><span class="icon">🔒</span>Bloquear</button>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Volumen & Scroll</div>
+          <div class="btn-grid">
+            <button class="cmd-btn" onclick="send({command:'volume',value:'80'})"><span class="icon">🔊</span>Vol +</button>
+            <button class="cmd-btn" onclick="send({command:'volume',value:'20'})"><span class="icon">🔈</span>Vol −</button>
+            <button class="cmd-btn" onclick="send({command:'swipe',x1:'540',y1:'300',x2:'540',y2:'900'})"><span class="icon">⬆</span>Scroll ↑</button>
+            <button class="cmd-btn" onclick="send({command:'swipe',x1:'540',y1:'900',x2:'540',y2:'300'})"><span class="icon">⬇</span>Scroll ↓</button>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Aplicaciones</div>
+          <div class="btn-grid">
+            <button class="cmd-btn success" onclick="send({command:'app',package:'com.spotify.music',name:'Spotify'})"><span class="icon">🎵</span>Spotify</button>
+            <button class="cmd-btn success" onclick="send({command:'app',package:'com.zhiliaoapp.musically',name:'TikTok'})"><span class="icon">🎬</span>TikTok</button>
+            <button class="cmd-btn success" onclick="send({command:'app',package:'com.facebook.katana',name:'Facebook'})"><span class="icon">📘</span>Facebook</button>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Facebook Tools</div>
+          <div class="btn-grid">
+            <button class="cmd-btn" onclick="send({command:'find_label_scroll',label:'Me gusta|Like',max_scrolls:'6'})"><span class="icon">🔍</span>Buscar Like</button>
+            <button class="cmd-btn success" onclick="send({command:'click_label',label:'Me gusta|Like'})"><span class="icon">👍</span>Dar Like</button>
+            <button class="cmd-btn" onclick="meEncanta()" style="--hover:var(--red)"><span class="icon">❤️</span>Me encanta</button>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Tap personalizado</div>
+          <div class="input-row">
+            <div class="field"><label>X</label><input type="number" id="tap-x" value="540" min="0"></div>
+            <div class="field"><label>Y</label><input type="number" id="tap-y" value="960" min="0"></div>
+            <button class="send-btn" onclick="sendTap()">Tap</button>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Swipe personalizado</div>
+          <div class="input-row">
+            <div class="field"><label>X1</label><input type="number" id="sw-x1" value="540" min="0"></div>
+            <div class="field"><label>Y1</label><input type="number" id="sw-y1" value="900" min="0"></div>
+            <div class="field"><label>X2</label><input type="number" id="sw-x2" value="540" min="0"></div>
+            <div class="field"><label>Y2</label><input type="number" id="sw-y2" value="300" min="0"></div>
+            <button class="send-btn" onclick="sendSwipe()">Swipe</button>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Escribir texto</div>
+          <div class="input-row">
+            <div class="field"><label>Texto</label><input type="text" id="type-text" class="wide" placeholder="Escribe algo..."></div>
+            <button class="send-btn" onclick="sendType()">Enviar</button>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Abrir app por paquete</div>
+          <div class="input-row">
+            <div class="field"><label>Package</label><input type="text" id="pkg-name" class="wide" placeholder="com.ejemplo.app"></div>
+            <button class="send-btn" onclick="sendPkg()">Abrir</button>
+          </div>
+        </div>
+
+      </div><!-- /controls -->
+
+      <!-- TAB: Screenshot -->
+      <div class="tab-content" id="tab-screenshot">
+        <div class="section">
+          <div class="section-title">Último screenshot</div>
+          <p style="font-size:12px;color:var(--muted);margin-bottom:10px">
+            Presiona Screenshot en el tab Controles. Requiere Android 11+.
+          </p>
+          <div class="screenshot-box" id="ss-box">
+            <img id="ss-img" alt="screenshot">
+            <span class="ph" id="ss-ph">Sin screenshot todavía</span>
+          </div>
+          <div class="ss-timestamp" id="ss-ts"></div>
+          <div style="margin-top:12px;display:flex;gap:8px">
+            <button class="send-btn" onclick="send({command:'screenshot'})">📸 Tomar screenshot</button>
+            <button class="send-btn" style="background:var(--bg4);color:var(--text)" onclick="clearScreenshot()">Limpiar</button>
+          </div>
+        </div>
+        <!-- per-device screenshots -->
+        <div class="section" id="all-screenshots" style="display:none">
+          <div class="section-title">Screenshots por dispositivo</div>
+          <div id="ss-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px"></div>
+        </div>
+      </div>
+
+      <!-- TAB: Automation -->
+      <div class="tab-content" id="tab-automation">
+
+        <div class="auto-card">
+          <h3>🎬 TikTok Like Loop</h3>
+          <p>Abre TikTok → espera → scroll → busca like → da like → repite.</p>
+          <div class="auto-row"><label>Repeticiones</label><input type="number" id="tk-reps" value="20" min="1" max="500"></div>
+          <div class="auto-row"><label>Pausa (seg)</label><input type="number" id="tk-delay" value="3" min="1" max="30"></div>
+          <div class="auto-row"><label>Scroll antes</label><input type="number" id="tk-scroll" value="1" min="0" max="5"></div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button class="run-btn" id="tk-run" onclick="runTikTokLoop()">▶ Iniciar</button>
+            <button class="stop-btn" id="tk-stop" onclick="stopAuto('tk')">■ Detener</button>
+          </div>
+          <div class="auto-progress" id="tk-progress"></div>
+        </div>
+
+        <div class="auto-card">
+          <h3>📘 Facebook Like Loop</h3>
+          <p>Abre Facebook → busca botón Like → da like → scroll → repite.</p>
+          <div class="auto-row"><label>Repeticiones</label><input type="number" id="fb-reps" value="30" min="1" max="500"></div>
+          <div class="auto-row"><label>Pausa (seg)</label><input type="number" id="fb-delay" value="4" min="1" max="30"></div>
+          <div class="auto-row"><label>Scrolls por ciclo</label><input type="number" id="fb-scroll" value="2" min="1" max="10"></div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button class="run-btn" id="fb-run" onclick="runFacebookLoop()">▶ Iniciar</button>
+            <button class="stop-btn" id="fb-stop" onclick="stopAuto('fb')">■ Detener</button>
+          </div>
+          <div class="auto-progress" id="fb-progress"></div>
+        </div>
+
+        <div class="auto-card">
+          <h3>🔁 Secuencia personalizada</h3>
+          <p>Escribe comandos JSON uno por línea. Cada línea = un comando.</p>
+          <textarea id="custom-seq" style="width:100%;height:140px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);padding:10px;font-family:monospace;font-size:12px;resize:vertical;outline:none" placeholder='{"command":"home"}
+{"command":"app","package":"com.facebook.katana","name":"Facebook"}
+{"command":"swipe","x1":"540","y1":"900","x2":"540","y2":"300"}
+{"command":"click_label","label":"Me gusta|Like"}'></textarea>
+          <div class="auto-row" style="margin-top:10px">
+            <label>Pausa entre cmds (seg)</label>
+            <input type="number" id="seq-delay" value="2" min="0" max="30">
+          </div>
+          <div class="auto-row">
+            <label>Repeticiones</label>
+            <input type="number" id="seq-reps" value="1" min="1" max="100">
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button class="run-btn" id="seq-run" onclick="runCustomSeq()">▶ Ejecutar</button>
+            <button class="stop-btn" id="seq-stop" onclick="stopAuto('seq')">■ Detener</button>
+          </div>
+          <div class="auto-progress" id="seq-progress"></div>
+        </div>
+
+      </div><!-- /automation -->
+
+      <!-- TAB: Settings -->
+      <div class="tab-content" id="tab-settings">
+        <div class="setting-group">
+          <h3>Servidor WebSocket</h3>
+          <div class="setting-row">
+            <label>URL del servidor</label>
+            <input type="text" id="set-url" placeholder="ws://IP:8765">
+          </div>
+          <div class="setting-row">
+            <label>Contraseña</label>
+            <input type="password" id="set-pass" placeholder="Contraseña">
+          </div>
+          <button class="save-settings" onclick="saveSettings()">Guardar y reconectar</button>
+        </div>
+        <div class="setting-group">
+          <h3>Dispositivos conectados</h3>
+          <div id="dev-detail" style="font-size:13px;color:var(--muted)">Cargando...</div>
+        </div>
+        <div class="setting-group">
+          <h3>Info</h3>
+          <p style="color:var(--muted);font-size:13px;line-height:1.6">
+            <strong style="color:var(--text)">Protocolo:</strong> WebSocket (sin Telegram ni FCM)<br>
+            <strong style="color:var(--text)">Screenshots:</strong> Requiere Android 11+ (API 30)<br>
+            <strong style="color:var(--text)">Auto-reconexión:</strong> Los dispositivos se reconectan automáticamente<br>
+            <strong style="color:var(--text)">Sin token:</strong> Los dispositivos usan UUID generado automáticamente
+          </p>
+        </div>
+      </div>
+
+    </div><!-- /main -->
+  </div><!-- /app body row -->
+
+</div><!-- /app -->
+
+<!-- log panel -->
+<div id="log-panel"></div>
+
+<script>
+// ── state ──────────────────────────────────────────────────────────────────
+let ws = null;
+let selectedTarget = 'all';
+let connectedDevices = [];
+let autoTimers = {};   // tk, fb, seq → setInterval/setTimeout ids
+let autoRunning = {};  // tk, fb, seq → bool
+let ssPerDevice = {};  // device_id → {data, ts}
+
+// ── persisted config ───────────────────────────────────────────────────────
+const LS_URL  = 'rc_server_url';
+const LS_PASS = 'rc_panel_pass';
+
+function getSavedUrl()  { return localStorage.getItem(LS_URL)  || 'ws://localhost:8765'; }
+function getSavedPass() { return localStorage.getItem(LS_PASS) || ''; }
+
+// ── init login form ────────────────────────────────────────────────────────
+document.getElementById('srv-url').value  = getSavedUrl();
+document.getElementById('srv-pass').value = getSavedPass();
+
+// enter key on pass
+document.getElementById('srv-pass').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+
+// ── login ──────────────────────────────────────────────────────────────────
+function doLogin() {
+  const url  = document.getElementById('srv-url').value.trim();
+  const pass = document.getElementById('srv-pass').value;
+  const err  = document.getElementById('login-err');
+  if (!url) { err.textContent = 'URL requerida'; return; }
+  err.textContent = '';
+  localStorage.setItem(LS_URL, url);
+  localStorage.setItem(LS_PASS, pass);
+  connectWS(url, pass);
+}
+
+function doLogout() {
+  if (ws) ws.close();
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+}
+
+// ── WebSocket ──────────────────────────────────────────────────────────────
+function connectWS(url, pass) {
+  if (ws) { ws.onclose = null; ws.close(); }
+  log('Conectando a ' + url + '...', 'info');
+  ws = new WebSocket(url + '/ws/panel');
+
+  ws.onopen = () => {
+    ws.send(JSON.stringify({ password: pass }));
+  };
+
+  ws.onmessage = (e) => {
+    let msg;
+    try { msg = JSON.parse(e.data); } catch { return; }
+
+    switch (msg.type) {
+      case 'auth':
+        if (msg.ok) {
+          document.getElementById('login-screen').style.display = 'none';
+          document.getElementById('app').style.display = 'flex';
+          setWsStatus(true, 'Conectado');
+          log('Autenticado correctamente', 'ok');
+          loadSettings();
+        } else {
+          document.getElementById('login-err').textContent = 'Contraseña incorrecta';
+          ws.close();
+          log('Auth fallida', 'err');
+        }
+        break;
+
+      case 'device_list':
+        connectedDevices = msg.devices || [];
+        renderDeviceList();
+        break;
+
+      case 'screenshot':
+        handleScreenshot(msg);
+        break;
+
+      case 'result':
+        log('✓ ' + (msg.message || JSON.stringify(msg)), 'ok');
+        break;
+
+      case 'error':
+        log('✗ ' + (msg.message || JSON.stringify(msg)), 'err');
+        break;
+
+      case 'pong':
+        break;
+
+      default:
+        log('← ' + JSON.stringify(msg));
+    }
+  };
+
+  ws.onclose = () => {
+    setWsStatus(false, 'Desconectado');
+    log('WS cerrado. Reintentando en 5s...', 'err');
+    setTimeout(() => connectWS(getSavedUrl(), getSavedPass()), 5000);
+  };
+
+  ws.onerror = (e) => {
+    log('WS error', 'err');
+  };
+}
+
+function setWsStatus(ok, text) {
+  document.getElementById('ws-dot').className = 'ws-dot' + (ok ? '' : ' off');
+  document.getElementById('ws-status').textContent = text;
+}
+
+// ── command sending ────────────────────────────────────────────────────────
+function send(payload) {
+  if (!ws || ws.readyState !== 1) { log('No conectado', 'err'); return; }
+  const msg = JSON.stringify({ type: 'cmd', target: selectedTarget, payload });
+  ws.send(msg);
+  log('→ [' + selectedTarget + '] ' + JSON.stringify(payload));
+}
+
+async function meEncanta() {
+  log('❤️ Me encanta: buscando botón Me gusta...');
+  send({ command: 'find_label_scroll', label: 'Me gusta|Like', max_scrolls: '4' });
+  await sleep(1200);
+  send({ command: 'long_click_label', label: 'Me gusta|Like' });
+  await sleep(800);
+  send({ command: 'click_label', label: 'Me encanta|Love|me encanta' });
+  log('❤️ Me encanta enviado');
+}
+
+function sendTap() {
+  const x = document.getElementById('tap-x').value;
+  const y = document.getElementById('tap-y').value;
+  send({ command:'tap', x, y });
+}
+
+function sendSwipe() {
+  const x1 = document.getElementById('sw-x1').value;
+  const y1 = document.getElementById('sw-y1').value;
+  const x2 = document.getElementById('sw-x2').value;
+  const y2 = document.getElementById('sw-y2').value;
+  send({ command:'swipe', x1, y1, x2, y2 });
+}
+
+function sendType() {
+  const text = document.getElementById('type-text').value;
+  if (!text) return;
+  send({ command:'type', text });
+}
+
+function sendPkg() {
+  const pkg = document.getElementById('pkg-name').value.trim();
+  if (!pkg) return;
+  send({ command:'app', package: pkg, name: pkg });
+}
+
+// ── device list ────────────────────────────────────────────────────────────
+function selectTarget(id) {
+  selectedTarget = id;
+  document.querySelectorAll('.device-item').forEach(el => el.classList.remove('active'));
+  const el = id === 'all'
+    ? document.getElementById('dev-all')
+    : document.getElementById('dev-' + id);
+  if (el) el.classList.add('active');
+
+  if (id === 'all') {
+    document.getElementById('target-label').textContent = 'Todos los dispositivos';
+  } else {
+    const dev = connectedDevices.find(d => d.id === id);
+    document.getElementById('target-label').textContent =
+      dev ? dev.name + ' (' + dev.id + ')' : id;
+  }
+}
+
+function renderDeviceList() {
+  const list = document.getElementById('device-list');
+  document.getElementById('dev-count').textContent = connectedDevices.length + ' online';
+
+  if (connectedDevices.length === 0) {
+    list.innerHTML = '<div class="no-devices">Sin dispositivos conectados</div>';
+    updateDevDetail();
+    return;
+  }
+
+  list.innerHTML = connectedDevices.map(d => `
+    <div class="device-item" onclick="selectTarget('${d.id}')" id="dev-${d.id}">
+      <div class="device-dot"></div>
+      <div>
+        <div class="device-name">${d.name}</div>
+        <div class="device-model">${d.model || d.id} · Android ${d.android || '?'}</div>
+      </div>
+    </div>
+  `).join('');
+
+  // Re-apply active selection
+  const el = selectedTarget === 'all'
+    ? document.getElementById('dev-all')
+    : document.getElementById('dev-' + selectedTarget);
+  if (el) el.classList.add('active');
+
+  updateDevDetail();
+}
+
+function updateDevDetail() {
+  const el = document.getElementById('dev-detail');
+  if (connectedDevices.length === 0) {
+    el.textContent = 'Ningún dispositivo conectado.';
+    return;
+  }
+  el.innerHTML = connectedDevices.map(d =>
+    `<div style="padding:6px 0;border-bottom:1px solid var(--border)">
+       <strong>${d.name}</strong> — ID: <code>${d.id}</code><br>
+       <span style="color:var(--muted)">Modelo: ${d.model} · Android ${d.android}</span>
+     </div>`
+  ).join('');
+}
+
+// ── screenshots ────────────────────────────────────────────────────────────
+function handleScreenshot(msg) {
+  const src = 'data:image/jpeg;base64,' + msg.data;
+  const ts  = new Date().toLocaleTimeString();
+
+  // Main viewer
+  const img = document.getElementById('ss-img');
+  const ph  = document.getElementById('ss-ph');
+  img.src = src;
+  img.style.display = 'block';
+  ph.style.display  = 'none';
+  document.getElementById('ss-ts').textContent =
+    (msg.device_name || msg.device_id) + ' · ' + ts;
+
+  // Per-device grid
+  ssPerDevice[msg.device_id] = { data: src, ts, name: msg.device_name || msg.device_id };
+  renderSsGrid();
+
+  log('📸 Screenshot de ' + (msg.device_name || msg.device_id), 'info');
+
+  // Auto-switch to screenshot tab if not on automation
+  if (!document.getElementById('tab-automation').classList.contains('active')) {
+    // don't auto-switch, just update silently
+  }
+}
+
+function renderSsGrid() {
+  const grid = document.getElementById('ss-grid');
+  const entries = Object.entries(ssPerDevice);
+  if (entries.length === 0) return;
+  document.getElementById('all-screenshots').style.display =
+    entries.length > 1 ? 'block' : 'none';
+
+  grid.innerHTML = entries.map(([id, s]) => `
+    <div style="border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+      <img src="${s.data}" style="width:100%;display:block">
+      <div style="padding:6px 8px;font-size:11px;color:var(--muted)">${s.name} · ${s.ts}</div>
+    </div>
+  `).join('');
+}
+
+function clearScreenshot() {
+  document.getElementById('ss-img').style.display = 'none';
+  document.getElementById('ss-ph').style.display = 'block';
+  document.getElementById('ss-ts').textContent = '';
+  ssPerDevice = {};
+  document.getElementById('ss-grid').innerHTML = '';
+}
+
+// ── tabs ───────────────────────────────────────────────────────────────────
+function switchTab(id, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-' + id).classList.add('active');
+}
+
+// ── automation helpers ─────────────────────────────────────────────────────
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function setAutoUI(key, running) {
+  autoRunning[key] = running;
+  document.getElementById(key + '-run').disabled = running;
+  const stop = document.getElementById(key + '-stop');
+  stop.style.display = running ? 'inline-block' : 'none';
+  if (!running) document.getElementById(key + '-progress').textContent = '';
+}
+
+function stopAuto(key) {
+  autoRunning[key] = false;
+  setAutoUI(key, false);
+  log('Automatización ' + key + ' detenida', 'err');
+}
+
+async function runTikTokLoop() {
+  const reps   = parseInt(document.getElementById('tk-reps').value)  || 20;
+  const delay  = parseInt(document.getElementById('tk-delay').value)  || 3;
+  const scrolls= parseInt(document.getElementById('tk-scroll').value) || 1;
+  setAutoUI('tk', true);
+
+  // Open TikTok first
+  send({ command:'app', package:'com.zhiliaoapp.musically', name:'TikTok' });
+  await sleep(3000);
+
+  for (let i = 1; i <= reps && autoRunning['tk']; i++) {
+    document.getElementById('tk-progress').textContent =
+      `Ciclo ${i}/${reps} — scrolleando...`;
+
+    for (let s = 0; s < scrolls && autoRunning['tk']; s++) {
+      send({ command:'swipe', x1:'540', y1:'900', x2:'540', y2:'300' });
+      await sleep(1200);
+    }
+
+    if (!autoRunning['tk']) break;
+    document.getElementById('tk-progress').textContent = `Ciclo ${i}/${reps} — buscando like...`;
+    send({ command:'find_label_scroll', label:'Me gusta|Like', max_scrolls:'3' });
+    await sleep(1500);
+
+    if (!autoRunning['tk']) break;
+    send({ command:'click_label', label:'Me gusta|Like' });
+    await sleep(delay * 1000);
+  }
+
+  if (autoRunning['tk']) {
+    setAutoUI('tk', false);
+    log('✅ TikTok loop completado: ' + reps + ' ciclos', 'ok');
+    document.getElementById('tk-progress').textContent = `✅ Completado ${reps} ciclos`;
+  }
+}
+
+async function runFacebookLoop() {
+  const reps   = parseInt(document.getElementById('fb-reps').value)   || 30;
+  const delay  = parseInt(document.getElementById('fb-delay').value)   || 4;
+  const scrolls= parseInt(document.getElementById('fb-scroll').value)  || 2;
+  setAutoUI('fb', true);
+
+  // Open Facebook first
+  send({ command:'app', package:'com.facebook.katana', name:'Facebook' });
+  await sleep(4000);
+
+  for (let i = 1; i <= reps && autoRunning['fb']; i++) {
+    document.getElementById('fb-progress').textContent =
+      `Ciclo ${i}/${reps} — buscando like...`;
+
+    send({ command:'find_label_scroll', label:'Me gusta|Like', max_scrolls:'4' });
+    await sleep(2000);
+
+    if (!autoRunning['fb']) break;
+    send({ command:'click_label', label:'Me gusta|Like' });
+    await sleep(1000);
+
+    for (let s = 0; s < scrolls && autoRunning['fb']; s++) {
+      send({ command:'swipe', x1:'540', y1:'900', x2:'540', y2:'300' });
+      await sleep(800);
+    }
+
+    await sleep(delay * 1000);
+  }
+
+  if (autoRunning['fb']) {
+    setAutoUI('fb', false);
+    log('✅ Facebook loop completado: ' + reps + ' ciclos', 'ok');
+    document.getElementById('fb-progress').textContent = `✅ Completado ${reps} ciclos`;
+  }
+}
+
+async function runCustomSeq() {
+  const raw   = document.getElementById('custom-seq').value.trim();
+  const delay = (parseFloat(document.getElementById('seq-delay').value) || 2) * 1000;
+  const reps  = parseInt(document.getElementById('seq-reps').value) || 1;
+
+  const lines = raw.split('\n').map(l => l.trim()).filter(l => l.startsWith('{'));
+  if (!lines.length) { log('No hay comandos válidos', 'err'); return; }
+
+  let cmds;
+  try { cmds = lines.map(l => JSON.parse(l)); }
+  catch (e) { log('JSON inválido: ' + e.message, 'err'); return; }
+
+  setAutoUI('seq', true);
+  let total = cmds.length * reps;
+  let done  = 0;
+
+  for (let r = 0; r < reps && autoRunning['seq']; r++) {
+    for (let c = 0; c < cmds.length && autoRunning['seq']; c++) {
+      done++;
+      document.getElementById('seq-progress').textContent =
+        `Paso ${done}/${total}: ${cmds[c].command}`;
+      send(cmds[c]);
+      await sleep(delay);
+    }
+  }
+
+  if (autoRunning['seq']) {
+    setAutoUI('seq', false);
+    log('✅ Secuencia completada', 'ok');
+    document.getElementById('seq-progress').textContent = '✅ Completada';
+  }
+}
+
+// ── settings ───────────────────────────────────────────────────────────────
+function loadSettings() {
+  document.getElementById('set-url').value  = getSavedUrl();
+  document.getElementById('set-pass').value = getSavedPass();
+}
+
+function saveSettings() {
+  const url  = document.getElementById('set-url').value.trim();
+  const pass = document.getElementById('set-pass').value;
+  localStorage.setItem(LS_URL,  url);
+  localStorage.setItem(LS_PASS, pass);
+  connectWS(url, pass);
+  log('Configuración guardada. Reconectando...', 'info');
+}
+
+// ── log ────────────────────────────────────────────────────────────────────
+function log(msg, type = '') {
+  const panel = document.getElementById('log-panel');
+  const line  = document.createElement('div');
+  line.className = 'log-line ' + type;
+  const t = new Date().toLocaleTimeString('es', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  line.textContent = '[' + t + '] ' + msg;
+  panel.appendChild(line);
+  panel.scrollTop = panel.scrollHeight;
+  // Keep max 200 lines
+  while (panel.children.length > 200) panel.removeChild(panel.firstChild);
+}
+
+function toggleLog() {
+  document.getElementById('log-panel').classList.toggle('visible');
+}
+</script>
+</body>
+</html>
